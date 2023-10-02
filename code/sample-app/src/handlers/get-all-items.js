@@ -18,7 +18,7 @@ exports.getAllItemsHandler = async (event, context) => {
             await logMetricEMF(name = 'UnsupportedHTTPMethod', unit = Unit.Count, value = 1, { service: 'item_service', operation: 'get-all-items' })
             throw new Error(`getAllItems only accept GET method, you tried: ${event.httpMethod}`)
         }
-
+        // throw new Error('Sample exception introduction') // <- Sample exception throw 
         const items = await getAllItems()
         response = {
             statusCode: 200,
