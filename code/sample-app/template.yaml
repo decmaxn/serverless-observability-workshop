@@ -20,6 +20,7 @@ Globals:
         ENABLE_DEBUG: false
         # Enable usage of KeepAlive to reduce overhead of short-lived actions, like DynamoDB queries
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+        AWS_EMF_NAMESPACE: MonitoringApp # <----- ADD FOR NAMESPACE SETUP  
   Api:
     TracingEnabled: true
 

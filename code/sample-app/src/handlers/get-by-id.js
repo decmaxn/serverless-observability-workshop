@@ -1,10 +1,21 @@
 const AWS = require('aws-sdk')
 const docClient = new AWS.DynamoDB.DocumentClient()
+const { Unit } = require("aws-embedded-metrics")
+const { logMetricEMF } = require('../lib/logging/logger')
+
+let _cold_start = true
+
 
 exports.getByIdHandler = async (event, context) => {
   let response, id
   try {
+    if (_cold_start) {
+      //Metrics
+      await logMetricEMF(name = 'ColdStart', unit = Unit.Count, value = 1, { service: 'item_service', function_name: context.functionName })
+      _cold_start = false
+    }
     if (event.httpMethod !== 'GET') {
+      await logMetricEMF(name = 'UnsupportedHTTPMethod', unit = Unit.Count, value = 1, { service: 'item_service', operation: 'get-by-id' })
       throw new Error(`getById only accept GET method, you tried: ${event.httpMethod}`)
     }
 
@@ -18,6 +29,8 @@ exports.getByIdHandler = async (event, context) => {
       },
       body: JSON.stringify(item)
     }
+    //Metrics
+    await logMetricEMF(name = 'SuccessfulGetItem', unit = Unit.Count, value = 1, { service: 'item_service', operation: 'get-by-id' })
   } catch (err) {
     response = {
       statusCode: 500,
@@ -26,6 +39,8 @@ exports.getByIdHandler = async (event, context) => {
       },
       body: JSON.stringify(err)
     }
+    //Metrics
+    await logMetricEMF(name = 'FailedGetItem', unit = Unit.Count, value = 1, { service: 'item_service', operation: 'get-by-id' })
   }
   return response
 }
