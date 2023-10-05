@@ -2,12 +2,16 @@ const AWS = require('aws-sdk')
 const docClient = new AWS.DynamoDB.DocumentClient()
 const { Unit } = require("aws-embedded-metrics")
 const { logMetricEMF } = require('../lib/logging/logger')
-
+const { logger_setup } = require('../lib/logging/logger')
+let log
 let _cold_start = true
 
 
 exports.getAllItemsHandler = async (event, context) => {
+    log = logger_setup()
     let response
+    log.info(event)
+    log.info(context)
     try {
         if (_cold_start) {
             //Metrics
@@ -16,6 +20,7 @@ exports.getAllItemsHandler = async (event, context) => {
         }
         if (event.httpMethod !== 'GET') {
             await logMetricEMF(name = 'UnsupportedHTTPMethod', unit = Unit.Count, value = 1, { service: 'item_service', operation: 'get-all-items' })
+            log.error({ "operation": "get-all-items", 'method': 'getAllItemsHandler', "details": `getAllItems only accept GET method, you tried: ${event.httpMethod}` })
             throw new Error(`getAllItems only accept GET method, you tried: ${event.httpMethod}`)
         }
         // throw new Error('Sample exception introduction') // <- Sample exception throw 
@@ -32,6 +37,8 @@ exports.getAllItemsHandler = async (event, context) => {
     } catch (err) {
         //Metrics
         await logMetricEMF(name = 'FailedGetAllItems', unit = Unit.Count, value = 1, { service: 'item_service', operation: 'get-all-items' })
+        // Logging
+        log.error({ "operation": "get-all-items", 'method': 'getAllItemsHandler', "details": err })
         response = {
             statusCode: 500,
             headers: {
@@ -40,6 +47,8 @@ exports.getAllItemsHandler = async (event, context) => {
             body: JSON.stringify(err)
         }
     }
+    // Logging
+    log.info({ operation: 'get-all-items', 'method': 'getAllItemsHandler', eventPath: event.path, statusCode: response.statusCode, body: JSON.parse(response.body) })
     return response
 }
 
